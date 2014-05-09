@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang = "en>
+    <head>
+    	<title>The Vickery-Crawler</title>
+    	<link rel="stylesheet" href = "css/smoothness/jquery-ui-1.10.1.custom.min.css"/>
+    </head>
+        
+        
+    <body>        
+        <input id="auto" />
+        
+        <script type="text/javascript" src="/path/to/jquery.ui.autocomplete.html.js"></script>
+         
+        <script type="text/javascript" src="/path/to/local/autocomplete.js"></script>
+        <script src="js/jquery-1.9.1.2.js" type="text/javascript"></script>
+        <script src="js/jquery-ui-1.10.1.custom.min.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            $(document).ready(function () {
+               $("#auto").autocomplete({
+                       source: function(req,res) {
+            $.ajax({
+                url: "http://www.ejemplo.com:3000/autocomplete/"+req.term,
+                dataType: "jsonp",
+                type: "GET",
+                data: {
+                    term: req.term
+                },
+                success: function(data) {
+                    res($.map(data, function(item) {
+                        return {
+                            label: item.text,//text comes from a collection of mongo
+                            value: item.text
+                        };
+                    }));
+                },
+                error: function(xhr) {
+                    alert(xhr.status + ' : ' + xhr.statusText);
+                }
+            });
+        },
+        select: function(event, ui) {
+
+        }
+    });
+               });
+            });
+        </script>
+        
+        
+        
+        
+        
+        
+        <form>
+            <h2>Autocomplete Field:</h2><input type="text" id="myTestField"/>
+        </form>
+        
+        <div id="box" style ="width:400; height:400; margin-left:auto; margin-right:auto; margin-top:100;">
+            <h2> Enter URL: </h2><input type = "text" id="input"></input>
+            
+            
+        </div>
+    </body>
+</html>
