@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" ng-app="myApp">
+<html lang="en" data-ng-app="">
     <head>
         <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
         <meta charset="utf-8">
@@ -16,14 +16,8 @@
         <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
         <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
         <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
-
-
-
-
-
-
-
-
+	    <link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+		<link rel="stylesheet" href="/resources/demos/style.css">
 
 
         <!-- CSS code from Bootply.com editor -->
@@ -198,12 +192,15 @@ body {
                 <li><a href="#">Advertiser 3 Details</a></li>
               </ul>
             </li>
-            <li> <p></p>
-					<form id="crawler" name="crawler" action="http://127.0.0.1:1339/urlCrawl" method="post">
-						<input type="text" id="url" name="advLink" size="75" maxlength="120" placeholder="Enter URL..." ng-model="url_to_crawl">
-						<!-- <input type="button" id="button" value="Crawl Url" name="button"/> -->
-						<div id="button_feedback"></div>
-					</form>
+            
+            <li>
+				<p></p>
+				<fieldset id="crawler">
+					<div class="ui-widget" style="background-color: #FFFFFF;">
+						<center><input type="text" id="url" name="advLink" data-ng-model="advLink" size="75" maxlength="120" placeholder="Populate Advertiser for website..."></center>
+					</div>
+					<div id="button_feedback"></div>
+				</fieldset>
 			</li>
           </ul>
         </div>
@@ -265,24 +262,10 @@ body {
 <!-- /.carousel -->
 
 
-
 <!-- Marketing messaging and featurettes
 ================================================== -->
 <!-- Wrap the rest of the page in another container to center all the content. -->
-
-<div class="container marketing">
-
-Search: <input ng-model="user">
-<div class="span10">
-    <!--Body content-->
-    <ul class="users">
-        <li ng-repeat="user in users | filter:user ">
-            {{advertiser.advName}}
-        </li>
-    </ul>
-</div>
-<form name="myform" id="myform1" ng-submit="save()">
-    <fieldset>
+<!--<fieldset>
         <legend>New Advertiser</legend>
             <div class="control-group">
                 <center><input type="text" placeholder="Advertiser Name…" ng-model="advName" size=50 required/></center>
@@ -294,9 +277,7 @@ Search: <input ng-model="user">
     <p>
          <div><center><button type="submit" >Ad now...</button></center></div>
     </p>
-</form>
-
-
+</form>-->
   <!-- Three columns of text below the carousel -->
   <div class="row">
     <div class="col-md-4 text-center">
@@ -364,6 +345,7 @@ Search: <input ng-model="user">
 		<script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
 		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.7/angular.min.js"></script>
 		<script type='text/javascript' src="/js/angularcontroller.js"></script>
+		<script type='text/javascript' src="/js/angular.min.js"></script>
 		<script type='text/javascript' src="/js/angular.js"></script>
 		<script> 
 			$('#button').click(function(){
@@ -378,51 +360,47 @@ Search: <input ng-model="user">
 		</script>
 		
 		<script>
+			$("#url").keyup(function(event){
+				if(event.keyCode == 13){
+					window.location.assign("/urlCrawl/"+encodeURIComponent($("#url").val())
+				)}
+			})
+		
+		
+		
+		</script>
+		
+		<script>
 		$(function(){			
+			  var availableTags = [
+			  "http://www.cnn.com/cnni/",
+			  "http://www.cnn.com/trends/?hpt=sitenav",
+			  "http://www.mtv.com/videos/misc/1039818/will-you-be-there-live-from-mtv10.jhtml",
+			  "http://www.mtv.com/videos/steve-aoki/1040782/rage-the-night-away.jhtml",
+			  "http://www.mtv.com/videos/katie-herzig/1031953/walk-through-walls.jhtml",
+			  "http://www.mtv.com/promotions/relativitymedia/oculus/",
+			  "http://www.cnn.com",
+			  "http://www.cnn.com/video/?hpt=sitenav",
+			  "http://www.cnn.com/US/?hpt=sitenav",
+			  "http://www.cnn.com/WORLD/?hpt=sitenav",
+			  "http://www.cnn.com/POLITICS/?hpt=sitenav",
+			  "http://www.cnn.com/JUSTICE/?hpt=sitenav",
+			  "http://www.cnn.com/SHOWBIZ/?hpt=sitenav",
+			  "http://www.cnn.com/TECH/?hpt=sitenav",
+			  "http://www.cnn.com/HEALTH/?hpt=sitenav",
+			  "http://www.cnn.com/LIVING/?hpt=sitenav",
+			  "http://www.cnn.com/TRAVEL/?hpt=sitenav",
+			  "http://www.cnn.com/OPINION/?hpt=sitenav",
+			  "http://www.cnn.com/trends",
+			  "http://www.cnn.com/2014/05/03/world/europe/ukraine-crisis/index.html?hpt=hp_inthenews",
+			  "http://docs.mongodb.org/manual/tutorial/enable-authentication/",
+			  "Scala",
+			  "Scheme"
+			];
 			$('#url').autocomplete({
-			/*source: function (req, res) {
-				$.ajax({
-					url: "http://127.0.0.1:1339/urlCrawl",
-					//dataType: "jsonp",
-					type: "GET",
-					data: request,
-					success: function (data) {
-						// Map response values to fiedl label and value
-				   response($.map(data, function (el) {
-					  return {
-						 label: el.did,
-						 value: el._id
-					  };
-					  }));
-				   }
-				});
-			 },
-			 
-			 // The minimum number of characters a user must type before a search is performed.
-			 minLength: 3, 
-			 
-			 // set an onFocus event to show the result on input field when result is focused
-			 focus: function (event, ui) { 
-				this.value = ui.item.label; 
-				// Prevent other event from not being execute
-				event.preventDefault();
-			 },
-			 select: function (event, ui) {
-				// Prevent value from being put in the input:
-				this.value = ui.item.label;
-				// Set the id to the next input hidden field
-				$(this).next("input").val(ui.item.value); 
-				// Prevent other event from not being execute            
-				event.preventDefault();
-				// optionnal: submit the form after field has been filled up
-				$('#quicksearch').submit();
-			 }
-	  })*/
-	  
-	  source:  ["http://docs.mongodb.org/manual/tutorial/enable-authentication/"],
-	  minlength: 1
-	});
-	});
+			  source: availableTags
+			});
+		});
 		</script>
 
         <script type='text/javascript' src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>

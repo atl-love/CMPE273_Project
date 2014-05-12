@@ -1,13 +1,30 @@
-var fs = require("fs");
+/*var fs = require("fs");
 var config = JSON.parse(fs.readFileSync("/Applications/XAMPP/xamppfiles/htdocs/CMPE273_Project/config.json"));
 var host = config.host;
-var port = config.port;
+var port = config.port;*/
+var count = 0;
+var host = "127.0.0.1";
+var port = "1339";
 var express = require("express");
 //autocomplete=require('./routes/autocomplete');
 var mongo = require("mongodb");
 var mongoose = require('mongoose');
+var url = require('url');
+var numAdv = 0; 
+var qualityScore= {};
+var adRank = [];
+var selectedAdv = 4;
+var temp;
+var tempId;
+var advDetails;
+var top30;
+var max = 0;
+var isTop30 = 0;
+var top3Adv = [];
 
-var config = {"USER"    : "",
+//var adAuction = require('./js/adauction.js');
+//var demoData = angular.module('demoData',[]);
+/*var config = {"USER"    : "",
               "PASS"    : "",
               "HOST"    : "ec2-54-187-119-188.us-west-2.compute.amazonaws.com",         
               "PORT"    : "27017",        
@@ -16,94 +33,80 @@ var dbPath  = "mongodb://"+config.USER + ":"+
 				config.PASS + "@"+     
 				config.HOST + "/"+     
 				config.DATABASE+":"+    
-				config.PORT;
+				config.PORT;*/
 
-var app = express.createServer();
+var app = express();
 
 
 app.use(app.router);
 app.use(express.static(__dirname + "/public"));
 app.use(express.bodyParser());
 app.use(express.methodOverride());
+
+/*var databaseUrl = "webpage"; // "username:password@example.com/mydb"
+var collections = ["advertisement", "scores", "offical_crawl_result"]
+var db = require("mongojs").connect(databaseUrl, collections);*/
+var mongojs = require('mongojs');//54.187.119.188
+var db = mongojs("54.187.119.188/webpage", ["advertisement", "scores", "offical_crawl_result"]);
+var JSONStream = require('JSONStream');
+
+app.use(function(req,res,next){
+	req.db=db;
+	next();
+});
+
   
 app.get("/", function(request, response){
-	response.send("hello!");
-	});
+	//response.send("hello!");
+	response.redirect('CMPE273_Template2.html');
+});
 
-var databaseUrl = "webpage"; // "username:password@example.com/mydb"
-var collections = ["advertisement", "score"]
-var db = require("mongojs").connect(databaseUrl, collections);
+
 //mongoose.connect('mongodb://localhost/webpage');
 
-console.log("We are connected! " + host + ":" + port);
+
 
 app.get("/user/id", function(request,response){
 
 });
 
-app.get("/urlCrawl", function(request, response) {
-   var regex = new RegExp(request.query["did"], 'i');
-   db.advertisement.find({did: regex}, { 'did': 1 }).sort({"updated_at":-1}).sort({"created_at":-1},
-		  // Execute query in a callback and return users list
-		 function(err, users) {
-		  if (!err) {
-			 // Method to construct the json result set
-			 var result = buildResultSet(users); 
-			 response.send(result, {
-				'Content-Type': 'application/json'
-			 }, 200);
-		  } else {
-			 response.send(JSON.stringify(err), {
-				'Content-Type': 'application/json'
-			 }, 404);
-		  }
-	});
-});
-
-
 app.get("/CMPE273_Vickrey/:text", function(request,response){
 	response.send("Hello " + request.params.text);	
 });
 
-app.listen(port, host);
 
-var AdvSchema = new mongoose.Schema({
-  advName: String
-, advId: Number
-, clicks: Number
-, cpc: Number
-, advLink: String
-, keywords: String
+app.get('/advertiserList', function (req, res) {
+	console.log("" + db.advertisement.find());
+		db.offical_crawl_result.find(function(err, urlLink) {
+			if( err || !urlLink) console.log("No  results found");
+			else urlLink.forEach(function(advUrls){
+		    	console.log(""+advUrls.url);
+				res.json(advUrls.url);
+			}
+		)
+	});	
 });
 
-
-db.advertisement.find(function(err, users) {
-  if( err || !users) console.log("No  users found");
-  else users.forEach( function(femaleUser) {
-    console.log(femaleUser);
-  } );
-});
 
 app.get('/getangularusers', function (req, res) {
 	res.header("Access-Control-Allow-Origin", "http://127.0.0.1:1339");
 	res.header("Access-Control-Allow-Methods", "GET, POST");
-        // The above 2 lines are required for Cross Domain Communication(Allowing the methods that come as Cross           // Domain Request
+    // The above 2 lines are required for Cross Domain Communication(Allowing the methods that come as Cross           // Domain Request
 	db.advertisement.find('', function(err, users) { // Query in MongoDB via Mongo JS Module
-	if( err || !users) console.log("No users found");
-	  else 
-	{
-		res.writeHead(200, {'Content-Type': 'application/json'}); // Sending data via json
-		str='[';
-		users.forEach( function(user) {
-			str = str + '{ "advName" : "' + user.advName + '"},' + '{"advLink" : "' + user.advLink + '"},'+ '{"keywords" : "' + user.keywords + '"},\n';
-		});
-		str = str.trim();
-		str = str.substring(0,str.length-1);
-		str = str + ']';
-		res.end( str);
+		if( err || !users) console.log("No users found");
+		else {
+			res.writeHead(200, {'Content-Type': 'application/json'}); // Sending data via json
+			str='[';
+			users.forEach( function(user) {
+				str = str + '{ "advName" : "' + user.advName + '"},' + '{"advLink" : "' + user.advLink + '"},'+ '{"keywords" : "' + user.keywords + '"},\n';
+			});
+			str = str.trim();
+			str = str.substring(0,str.length-1);
+			str = str + ']';
+			res.end( str);
                 // Prepared the jSon Array here
-	}
-  });
+		}
+  	});
 });
 
 app.post('/insertangularmongouser', function (req, res){
@@ -119,12 +122,14 @@ app.post('/insertangularmongouser', function (req, res){
   db.advertisement.save({advName: jsonData.advName, advLink: jsonData.advLink, keywords: jsonData.keywords, advId: jsonData.advId},
        function(err, saved) { // Query in MongoDB via Mongo JS Module
            if( err || !saved ) res.end( "User not saved"); 
-           else {console.log("AdvName:" + jsonData.advName + "AdvLink:" + jsonData.advLink + "keywords: "+jsonData.keywords+"advId: " + jsonData.advId); res.end( "User saved")};
+           else {console.log("AdvLink:" + jsonData.advLink); res.end( "User saved")};
        });
 });
 
 
-function getAdvertiser(advId,callback){	db.open(function(error){
+/*function getAdvertiser(advId,callback){	
+
+db.open(function(error){
 	//var db = new mongo.Db("webpage", new mongo.Server(host,port,{}));
 	mongoose.connect(dbPath);
 		console.log("We are connected! " + host + ":" + port);
@@ -135,7 +140,7 @@ function getAdvertiser(advId,callback){	db.open(function(error){
 		});
 	});
 		
-		//db.collection("advertisement", function(error, collection){
+		/*db.collection("advertisement", function(error, collection){
 			console.log("We have the collection");
 			collection.find({"advId":101},function(error, cursor){
 				cursor.toArray(function(error, advertisements){
@@ -148,6 +153,123 @@ function getAdvertiser(advId,callback){	db.open(function(error){
 					}
 				});
 			});
-		});
+		});*/
 
-}
+/*db.advertisement.find(function(err, users) {
+  if( err || !users) console.log("No  users found");
+  else users.forEach( function(femaleUser) {
+    console.log(femaleUser);
+  });
+})
+)}*/
+
+
+app.get('/urlCrawl/:advLink', function(req, res) {
+	
+		res.header("Access-Control-Allow-Origin", "http://127.0.0.1:1339");
+		res.header("Access-Control-Allow-Methods", "GET, POST");
+		// The above 2 lines are required for Cross Domain Communication(Allowing the methods that come as Cross           // Domain Request
+		db.scores.find({did:req.params.advLink.toString()}).sort({p:1},function(err, ads) { // (1st CB): Query in MongoDB via Mongo JS Module
+			if(err) {console.log(err);}
+			else {
+				
+				var aIdToArray = new Array();
+				var pToArray = new Array();
+				var qual = new Array();
+				var qual;
+				//top30 = ads.length *.3;
+
+			
+				ads.forEach( function(ad) {//2' CB
+				
+						//db.advertisement.find({advId:ad.aid.toString()},function(err,advToArray){//(2nd CB) call back
+						//console.log("advToArray: " + advToArray.advId);
+						
+						//qual = (advToArray.cpc*ads.p)*.6 + (advToArray.lastAccessed/new Date().getTime())*.15;			
+						//advDetails[i].qualScore = (advDetails.cpc*advToArray[i].p)*.6 + (advDetails[i].lastAccessed/new Date().getTime())*.15 + isTop30*.2;
+		
+					
+				    	//numAdv=db.scores.find({did:req.params.advLink}).count();
+						numAdv++;
+						//console.log("Num: "+numAdv);	
+						//advToArray[count++]=ad.did;
+						aIdToArray.push(parseInt(ad.aId));	//ERROR
+						pToArray.push(parseFloat(ad.p));	
+						console.log("p: " + ad.aId);
+						
+						//db.scores.update({},{$addToSet:{advToArray: ad.aid}});
+
+				//})//2 CB
+			})//2' CB
+				//find().pipe(JSONStream.stringify()).pipe(process.stdout);
+			db.advertisement.find({advId:{$in:aIdToArray}},function(err, data){//cb 3
+				data.forEach(function(d){//cb4
+					console.log("Data: " + d.cpc);
+					for(var i = 0; i < aIdToArray.length; i++){
+						console.log("Data: " + d.cpc);
+						console.log("Adv2: " + aIdToArray[i]);
+						qual = ((d.cpc*aIdToArray[i].p*.6)); + //((d.lastAccessed)/(parseInt(new Date().getTime())))*.15);
+						console.log("qual: " + qual);
+					}
+			
+			
+			
+					})//cb4
+			})//cb 3
+		}//else			
+	});
+		
+		
+	
+	//create array of advertisers for url crawled
+	advToArray = db.scores.find( {did: "http://www.cnn.com/"}, {aid:1,p:1,cpc:1}).sort({p:1});//).toArray(function(){});
+	//top30 = advToArray.length *.3;
+	//console.log(""+advToArray);
+	
+	//calculate quality score
+	/*for (var i = 0; i < advToArray.length-1; i++){
+	
+			//get details for specific advertiser
+			tempId = advToArray[i].aid;
+			advDetails = db.advertisement.find({advId:103}, {advId:1,cpc:1,advName:1,lastAccessed:1, qualScore:1, adRank:1,lastChargedPrice:1}).toArray();
+			
+			//determine top 30
+			for (var j = 0; j < top30; j++){ if(i<=j){isTop30=1;} else {isTop30=0;}	}
+			
+			//calculate quality score
+			advDetails[i].qualScore = (advDetails.cpc*advToArray[i].p)*.6 + (advDetails[i].lastAccessed/new Date().getTime())*.15 + isTop30*.2;
+			
+			//calculate adRank
+			advDetails[k].adRank = advDetails[k].cpc*advDetails[k].qualScore;
+		
+		}
+		
+			//sort array based on quality score
+			//advDetails = sortByKey(advDetails, 'adRank'); //-------------------------------------------------
+		
+		function sortByQualScore(array, rank) {
+			return array.sort(function(a, b) {
+				var x = a[rank]; var y = b[rank];
+				return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+			});
+		}
+		 
+		 
+		//caclulate cost for ads
+		for (var k = 0; k < selectedAdv; k++){
+		 
+			//adrank person below/quality score +.01
+			advDetails[k].lastChargedPrice = advDetails[k+1].adRank/advDetails.qualScore + .01;
+			
+		}
+		*/
+			
+				console.log("You sent the name " + req.params.advLink);
+				
+				res.send('You sent the name "' + req.params.advLink + '".');
+});
+
+app.listen(port, host);
+console.log("We are connected! " + host + ":" + port);
+
+
